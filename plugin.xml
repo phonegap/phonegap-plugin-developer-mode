@@ -16,7 +16,7 @@ xmlns:android="http://schemas.android.com/apk/res/android"
     </js-module>
 
     <platform name="ios">
-        <source-file src="src/ios/ContentSync.m" />
-        <header-file src="src/ios/ContentSync.h" />
+        <source-file src="src/ios/DeveloperMode.m" />
+        <header-file src="src/ios/DeveloperMode.h" />
     </platform>
 </plugin>
