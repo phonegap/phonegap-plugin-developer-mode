@@ -2,7 +2,6 @@
 @implementation DeveloperMode
 
 - (void)pluginInitialize {
-    [NSURLProtocol registerClass:[NSURLProtocolNoCache class]];
 }
 
 - (void)enableHomeScript:(CDVInvokedUrlCommand*)command {
