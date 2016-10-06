@@ -1,4 +1,4 @@
-> Utility functions for the PhoneGap Developer App
+> Utility functions for the PhoneGap Developer App :godmode:
 
 ## Installation
 
