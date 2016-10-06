@@ -16,6 +16,22 @@ module.exports = {
 
     enableHomeScript: function() {
         exec(null, null, 'DeveloperMode', 'enableHomeScript');
+    },
+
+    enableAutoreload: function() {
+
+    },
+
+    enableConsole: function() {
+
+    },
+
+    enableDeploy: function() {
+
+    },
+
+    enablePush: function() {
+
     }
 
 };
