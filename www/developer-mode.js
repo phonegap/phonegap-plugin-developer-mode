@@ -14,6 +14,18 @@ module.exports = {
 };
 
 if(module.exports.enabledScripts.autoreload) {
+
+}
+
+if(module.exports.enabledScripts.console) {
+
+}
+
+if(module.exports.enabledScripts.deploy) {
+
+}
+
+if(module.exports.enabledScripts.homepage) {
     /**
      * Enables 3-finger-tap home script
      * Runs on plugin load.
@@ -55,4 +67,12 @@ if(module.exports.enabledScripts.autoreload) {
       }, false)
 
     })();
+}
+
+if(module.exports.enabledScripts.push) {
+
+}
+
+if(module.exports.enabledScripts.refresh) {
+
 }
