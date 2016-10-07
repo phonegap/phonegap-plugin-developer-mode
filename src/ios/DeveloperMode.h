@@ -3,6 +3,4 @@
 
 @interface DeveloperMode : CDVPlugin
 
-- (void) enableHomeScript:(CDVInvokedUrlCommand*)command;
-
 @end

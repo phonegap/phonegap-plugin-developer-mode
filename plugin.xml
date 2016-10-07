@@ -3,7 +3,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
 xmlns:android="http://schemas.android.com/apk/res/android"
            id="phonegap-plugin-developer-mode"
-      version="0.0.1">
+      version="0.1.0">
     <name>developer-mode</name>
     <description>PhoneGap Developer Mode Plugin</description>
     <license></license>
@@ -14,9 +14,4 @@ xmlns:android="http://schemas.android.com/apk/res/android"
     <js-module src="www/developer-mode.js" name="DeveloperMode">
         <clobbers target="window.DeveloperMode" />
     </js-module>
-
-    <platform name="ios">
-        <source-file src="src/ios/DeveloperMode.m" />
-        <header-file src="src/ios/DeveloperMode.h" />
-    </platform>
 </plugin>

@@ -1,21 +1,48 @@
 
 var exec = cordova.require('cordova/exec');
 
+module.exports = {
+  
+};
 
-
-/*!
- * Content Sync Plugin.
+/**
+ * Enables 3-finger-tap home script
+ * Runs on plugin load.
  */
 
-module.exports = {
+(function () {
 
-    /**
-     * Enables injection of home (3-finger-tap) javascript code on page load.
-     *
-     */
+  console.log('DeveloperMode: enabling 3-finger home script')
 
-    enableHomeScript: function() {
-        exec(null, null, 'DeveloperMode', 'enableHomeScript');
+  var e = {},
+    t = {
+      touchstart: 'touchstart',
+      touchend: 'touchend'
+    };
+
+  if (window.navigator.msPointerEnabled) {
+    t = {
+      touchstart: 'MSPointerDown',
+      touchend: 'MSPointerUp'
     }
+  }
 
-};
+  document.addEventListener(t.touchstart, function(t) {
+    var n = t.touches || [t],
+      r;
+    for (var i = 0, s = n.length; i < s; i++) {
+      r = n[i];
+      e[r.identifier || r.pointerId] = r
+    }
+  }, false);
+
+  document.addEventListener(t.touchend, function(t) {
+    var n = Object.keys(e).length;
+    e = {};
+    if (n === 3) {
+      t.preventDefault();
+      window.history.back(window.history.length)
+    }
+  }, false)
+
+})();
