@@ -14,4 +14,7 @@ xmlns:android="http://schemas.android.com/apk/res/android"
     <js-module src="www/developer-mode.js" name="DeveloperMode">
         <clobbers target="window.DeveloperMode" />
     </js-module>
+
+    <dependency id="phonegap-plugin-contentsync" url="https://github.com/phonegap/phonegap-plugin-contentsync" version="1.2.4" />
+    <dependency id="phonegap-plugin-push" version="1.6.3" />
 </plugin>
