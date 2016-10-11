@@ -344,6 +344,8 @@ module.exports = (function() {
          */
         (function() {
 
+            console.log('DeveloperMode: enabling push script');
+
             document.addEventListener('deviceready', function() {
                 var oldPushNotification;
                 if (window.PushNotification) {
