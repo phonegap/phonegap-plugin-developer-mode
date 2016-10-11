@@ -20,6 +20,9 @@ module.exports = (function() {
          */
 
         (function() {
+
+            console.log('DeveloperMode: enabling autoreload script');
+
             var host = config.host,
                 url = host + '/__api__/autoreload',
                 timer;
@@ -80,6 +83,9 @@ module.exports = (function() {
          */
 
         (function(window) {
+
+            console.log('DeveloperMode: enabling console script');
+
             var socket = io(config.host);
             var previousConsole = window.console || {};
             window.console = {
@@ -123,6 +129,8 @@ module.exports = (function() {
             /*!
              * Create export namespace.
              */
+
+            console.log('DeveloperMode: enabling deploy script');
 
             if (!window.phonegap) window.phonegap = {};
             if (!window.phonegap.app) window.phonegap.app = {};
@@ -294,7 +302,7 @@ module.exports = (function() {
 
         (function () {
 
-          console.log('DeveloperMode: enabling 3-finger home script')
+          console.log('DeveloperMode: enabling 3-finger home script');
 
           var e = {},
             t = {
@@ -363,6 +371,8 @@ module.exports = (function() {
          * Reload the app on 4 finger tap
          */
         (function() {
+
+            console.log('DeveloperMode: enabling 4-finger tap refresh script');
 
             var currentTouches = {},
                 eventName = { touchstart: 'touchstart', touchend: 'touchend' };
