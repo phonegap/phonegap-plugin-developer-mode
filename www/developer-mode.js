@@ -19,6 +19,18 @@ module.exports = {
     },
     getHostAddress: function() {
         return config.host;
+    },
+    setEnabledScript: function(script, value) {
+        if(config.enabledScripts[script]) {
+            config.enabledScripts[script] = value;
+        }
+    },
+    getEnabledScript: function(script) {
+        if(config.enabledScripts[script]) {
+            return config.enabledScripts[script];
+        } else{
+            return false;
+        }
     }
 }
 
@@ -134,7 +146,12 @@ if(config.enabledScripts.deploy) {
      *   - `options` {Object}
      *     - `address` {String} is the server address.
      */
+    /*!
+     * Create export namespace.
+     */
 
+    if (!window.phonegap) window.phonegap = {};
+    if (!window.phonegap.app) window.phonegap.app = {};
     window.phonegap.app.downloadZip = function(options) {
         var uri, sync;
         if (options.update) {
@@ -224,7 +241,7 @@ if(config.enabledScripts.push) {
                 return pgdevPush;
             };
         }
-    });a
+    });
 }
 
 if(config.enabledScripts.refresh) {
