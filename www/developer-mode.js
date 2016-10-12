@@ -5,7 +5,7 @@ var config = {
         'enabledScripts' : {
             // these should be set via local storage or some other mechanism
             'autoreload': true,
-            'console': false,
+            'console': true,
             'deploy': true,
             'homepage': true,
             'push': true,
@@ -14,11 +14,23 @@ var config = {
     };
 
 module.exports = {
+    deploy: {
+        // reserved for namespacing
+    },
+    formatAddress: function(path) {
+        // default to http:// when no protocol exists
+        path = (path.match(/^(.*:\/\/)/)) ? path : 'http://' + path;
+        // replace double forward slashes with a single forward-slash
+        // except after the protocol (://)
+        path = path.replace(/([^:])\/\//g, '$1/');
+
+        return path;
+    },
     setHostAddress: function(address) {
         config.host = address;
     },
     getHostAddress: function() {
-        return config.host;
+        return this.formatAddress(config.host);
     },
     setEnabledScript: function(script, value) {
         if(config.enabledScripts[script]) {
@@ -41,9 +53,7 @@ if(config.enabledScripts.autoreload) {
 
     console.log('DeveloperMode: enabling autoreload script');
 
-    var host = module.exports.getHostAddress(),
-        url = host + '/__api__/autoreload',
-        timer;
+    var timer;
 
     function postStatus() {
         var xhr = new XMLHttpRequest();
@@ -69,19 +79,15 @@ if(config.enabledScripts.autoreload) {
                     // this is ensure we don't duplicate a download when we first launch the app on device
                     if(response.content.lastUpdated !== 0){
                         window.clearTimeout(timer);
-                        window.phonegap.app.config.load(function(config){
-                            window.phonegap.app.downloadZip({
-                                address: 'http://' + module.exports.getHostAddress(),
-                                update: true
-                            });
+                        window.DeveloperMode.downloadZip({
+                            address: 'http://' + module.exports.getHostAddress(),
+                            update: true
                         });
                     }
                 } else if (response.projectChanged) {
-                    window.phonegap.app.config.load(function(config) {
-                        window.phonegap.app.downloadZip({
-                            address: 'http://' + module.exports.getHostAddress(),
-                            update: false
-                        });
+                    window.DeveloperMode.downloadZip({
+                        address: 'http://' + module.exports.getHostAddress(),
+                        update: false
                     });
                 }
             }
@@ -102,36 +108,38 @@ if(config.enabledScripts.console) {
 
     console.log('DeveloperMode: enabling console script');
 
-    var socket = io(config.host);
-    var previousConsole = window.console || {};
-    window.console = {
-        log:function(){
-            if(previousConsole.log) {
-                previousConsole.log.apply(previousConsole, arguments);
+    if(typeof io != "undefined") {
+        var socket = io(config.host);
+        var previousConsole = window.console || {};
+        window.console = {
+            log:function(){
+                if(previousConsole.log) {
+                    previousConsole.log.apply(previousConsole, arguments);
+                }
+                socket.emit('console','log', Array.prototype.slice.call(arguments).join(' '));
+            },
+            warn:function(){
+                if(previousConsole.warn) {
+                    previousConsole.warn.apply(previousConsole, arguments);
+                }
+                socket.emit('console','warn', Array.prototype.slice.call(arguments).join(' '));
+            },
+            error:function(){
+                if(previousConsole.error) {
+                    previousConsole.error.apply(previousConsole, arguments);
+                }
+                socket.emit('console','error', Array.prototype.slice.call(arguments).join(' '));
+            },
+            assert:function(assertion) {
+                if(previousConsole.assert) {
+                    previousConsole.assert.apply(previousConsole, arguments);
+                }
+                if(assertion){
+                    socket.emit('console','assert', Array.prototype.slice.call(arguments, 1).join(' '));
+                }
             }
-            socket.emit('console','log', Array.prototype.slice.call(arguments).join(' '));
-        },
-        warn:function(){
-            if(previousConsole.warn) {
-                previousConsole.warn.apply(previousConsole, arguments);
-            }
-            socket.emit('console','warn', Array.prototype.slice.call(arguments).join(' '));
-        },
-        error:function(){
-            if(previousConsole.error) {
-                previousConsole.error.apply(previousConsole, arguments);
-            }
-            socket.emit('console','error', Array.prototype.slice.call(arguments).join(' '));
-        },
-        assert:function(assertion) {
-            if(previousConsole.assert) {
-                previousConsole.assert.apply(previousConsole, arguments);
-            }
-            if(assertion){
-                socket.emit('console','assert', Array.prototype.slice.call(arguments, 1).join(' '));
-            }
-        }
-    };
+        };
+    }
 }
 
 if(config.enabledScripts.deploy) {
@@ -146,13 +154,10 @@ if(config.enabledScripts.deploy) {
      *   - `options` {Object}
      *     - `address` {String} is the server address.
      */
-    /*!
-     * Create export namespace.
-     */
 
-    if (!window.phonegap) window.phonegap = {};
-    if (!window.phonegap.app) window.phonegap.app = {};
-    window.phonegap.app.downloadZip = function(options) {
+    if (!module.exports.deploy) module.exports.deploy = {};
+
+    module.exports.deploy.downloadZip = function(options) {
         var uri, sync;
         if (options.update) {
             uri = encodeURI(options.address + '/__api__/update');
