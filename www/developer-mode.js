@@ -158,17 +158,27 @@ if(config.enabledScripts.deploy) {
     if (!module.exports.deploy) module.exports.deploy = {};
 
     module.exports.deploy.downloadZip = function(options) {
-        var uri, sync;
-        if (options.update) {
+        var uri;
+        var sync;
+        var theHeaders = options.headers;
+        if(options.update === true) {
             uri = encodeURI(options.address + '/__api__/update');
-            sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'merge', copyCordovaAssets: false });
+            sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'merge', copyCordovaAssets: false, headers: theHeaders });
+            sync.on('complete', function(data) {
+                window.location.reload();
+            });
         } else {
             uri = encodeURI(options.address + '/__api__/appzip');
-            sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'replace', copyCordovaAssets: true });
+            sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'replace', copyCordovaAssets: true, headers: theHeaders });
+            sync.on('complete', function(data) {
+                window.location.href = data.localPath + '/www/index.html';
+            });
         }
 
-        sync.on('complete', function(data){
-            window.location.reload();
+        sync.on('progress', function(data) {
+            if(options.onProgress) {
+                options.onProgress(data);
+            }
         });
 
         sync.on('error', function(e){
@@ -177,7 +187,20 @@ if(config.enabledScripts.deploy) {
                     options.onDownloadError(e);
                 }, 10);
             }
-            console.log('download error', e.message);
+            console.log("download error " + e);
+        });
+
+        document.addEventListener('cancelSync', function(e) {
+            sync.cancel();
+        });
+
+        sync.on('cancel', function(e) {
+            if (options.onCancel) {
+                setTimeout(function() {
+                    options.onCancel(e);
+                }, 10);
+            }
+            console.log("download cancelled by user");
         });
     };
 }
