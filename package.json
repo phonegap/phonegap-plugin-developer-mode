@@ -1,0 +1,49 @@
+{
+    "name": "phonegap-plugin-developer-mode",
+    "description": "A PhoneGap plugin with a set of scripts to help with development.",
+    "version": "0.1.0",
+    "homepage": "https://github.com/phonegap/phonegap-plugin-developer-mode",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/phonegap/phonegap-plugin-developer-mode.git"
+    },
+    "bugs": {
+      "url": "https://github.com/phonegap/phonegap-plugin-developer-mode/issues"
+    },
+    "cordova": {
+      "id": "phonegap-plugin-developer-mode",
+      "platforms": [
+        "ios",
+        "android",
+        "windows8",
+        "windows",
+        "wp8",
+        "browser"
+      ]
+    },
+    "keywords": [
+      "ecosystem:cordova",
+      "ecosystem:phonegap",
+      "cordova-ios",
+      "cordova-android",
+      "cordova-windows8",
+      "cordova-windows",
+      "cordova-wp8",
+      "cordova-browser"
+    ],
+    "engines": [
+      {
+        "name": "cordova",
+        "version": ">=3.0.0"
+      }
+    ],
+    "author": "Adobe PhoneGap Team",
+    "license": "APL",
+    "scripts": {
+        "test": "jasmine-node --color spec",
+        "paramedic": "./tests/scripts/start-server.sh && cordova-paramedic --platform ios && ./tests/scripts/stop-server.sh"
+    },
+    "devDependencies": {
+        "jasmine-node": "1.14.5"
+    }
+}
