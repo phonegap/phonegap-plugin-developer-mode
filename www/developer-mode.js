@@ -1,6 +1,10 @@
 
 var exec = cordova.require('cordova/exec');
-var config;
+
+var config = {
+    host: '',
+    enabledScripts: {}
+};
 
 module.exports = {
     deploy: {
@@ -16,6 +20,7 @@ module.exports = {
         return path;
     },
     setHostAddress: function(address) {
+        if(!config.host) config.host = '';
         config.host = address;
         save(config, function(){
             console.log('Saved config.host: ' + config.host);
@@ -25,12 +30,11 @@ module.exports = {
         return this.formatAddress(config.host);
     },
     setEnabledScript: function(script, value) {
-        if(typeof config.enabledScripts[script] != "undefined") {
-            config.enabledScripts[script] = value;
-            save(config, function(){
-                console.log('Saved config.enabledScript.'+ script + ' : ' + value);
-            });
-        }
+        if(!config.enabledScripts) config.enabledScripts = {};
+        config.enabledScripts[script] = value;
+        save(config, function(){
+            console.log('Saved config.enabledScript.'+ script + ' : ' + value);
+        });
     },
     getEnabledScript: function(script) {
         if(typeof config.enabledScripts[script] != "undefined") {
@@ -45,7 +49,7 @@ module.exports = {
 
 function load(callback) {
     readFile('config.json', function(e, text) {
-        var config = parseAsJSON(text);
+        config = parseAsJSON(text);
 
         config.host = config.host || '127.0.0.1:3000';
         if(!config.enabledScripts) {
