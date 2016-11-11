@@ -3,6 +3,7 @@ var exec = cordova.require('cordova/exec');
 
 var config = {
     host: '',
+    homescreenMode: true,
     enabledScripts: {}
 };
 
@@ -40,6 +41,12 @@ module.exports = {
         if(typeof config.enabledScripts[script] != "undefined") {
             return config.enabledScripts[script];
         }
+    },
+    setHomescreenMode: function(value) {
+        config.homescreenMode = value;
+    },
+    getHomescreenMode: function() {
+        return config.homescreenMode;
     }
 }
 
@@ -52,6 +59,8 @@ function load(callback) {
         config = parseAsJSON(text);
 
         config.host = config.host || '127.0.0.1:3000';
+        config.homescreenMode = config.homescreenMode || true;
+
         if(!config.enabledScripts) {
             config.enabledScripts = {
                 'autoreload': true,
@@ -161,9 +170,9 @@ function parseAsJSON(text) {
  */
 
 load(function(loadedConfig) {
-    config = loadedConfig; 
+    config = loadedConfig;
 
-    if(config.enabledScripts.autoreload) {
+    if(config.enabledScripts.autoreload && !config.homescreenMode) {
         /**
          * Reload the app if server detects local change
          */
@@ -322,7 +331,7 @@ load(function(loadedConfig) {
         };
     }
 
-    if(config.enabledScripts.homepage) {
+    if(config.enabledScripts.homepage && !config.homescreenMode) {
         /**
          * Enables 3-finger-tap home script
          * Runs on plugin load.
@@ -362,7 +371,7 @@ load(function(loadedConfig) {
           }, false)
     }
 
-    if(config.enabledScripts.push) {
+    if(config.enabledScripts.push && !config.homescreenMode) {
         /**
          * Enable push notifications
          */
@@ -389,7 +398,7 @@ load(function(loadedConfig) {
         });
     }
 
-    if(config.enabledScripts.refresh) {
+    if(config.enabledScripts.refresh && !config.homescreenMode) {
         /**
          * Reload the app on 4 finger tap
          */
@@ -420,6 +429,6 @@ load(function(loadedConfig) {
                 window.location.reload(true);
             }
         }, false);
-    }    
+    }
 });
-  
+
