@@ -2,7 +2,7 @@
 var exec = cordova.require('cordova/exec');
 
 var config = {
-    host: '',
+    hosts: [],
     homescreenMode: true,
     enabledScripts: {}
 };
@@ -20,15 +20,15 @@ module.exports = {
 
         return path;
     },
-    setHostAddress: function(address) {
-        if(!config.host) config.host = '';
-        config.host = address;
+    addHostAddress: function(address) {
+        if(!config.hosts) config.hosts = [];
+        config.hosts.push(this.formatAddress(address));
         save(config, function(){
-            console.log('Saved config.host: ' + config.host);
+            console.log('Saved config.hosts: ' + config.hosts[config.hosts.length-1]);
         });
     },
-    getHostAddress: function() {
-        return this.formatAddress(config.host);
+    getHostAddresses: function() {
+        return config.hosts;
     },
     setEnabledScript: function(script, value) {
         if(!config.enabledScripts) config.enabledScripts = {};
@@ -58,7 +58,7 @@ function load(callback) {
     readFile('config.json', function(e, text) {
         config = parseAsJSON(text);
 
-        config.host = config.host || '127.0.0.1:3000';
+        config.hosts = config.hosts || [module.exports.formatAddress('127.0.0.1:3000')];
         config.homescreenMode = config.homescreenMode || true;
 
         if(!config.enabledScripts) {
@@ -235,7 +235,7 @@ load(function(loadedConfig) {
         console.log('DeveloperMode: enabling console script');
 
         if(typeof io != "undefined") {
-            var socket = io(config.host);
+            var socket = io(config.hosts);
             var previousConsole = window.console || {};
             window.console = {
                 log:function(){
