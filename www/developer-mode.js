@@ -3,6 +3,7 @@ var exec = cordova.require('cordova/exec');
 
 var config = {
     hosts: [],
+    currentHost = '',
     homescreenMode: true,
     enabledScripts: {}
 };
@@ -29,6 +30,17 @@ module.exports = {
     },
     getHostAddresses: function() {
         return config.hosts;
+    },
+    setCurrentHostAddress: function(address) {
+        // add host address if it's not in there already
+        var hostList = hosts.join(',');
+        if(hostList.indexOf(address) === -1) {
+            addHostAddress(address);
+        }
+        config.currentHost = this.formatAddress(address);
+    },
+    getCurrentHostAddress: function() {
+        return config.currentHost;
     },
     setEnabledScript: function(script, value) {
         if(!config.enabledScripts) config.enabledScripts = {};
@@ -69,7 +81,7 @@ function load(callback) {
 
         config.hosts = config.hosts || [module.exports.formatAddress('127.0.0.1:3000')];
         config.homescreenMode = module.exports.getHomescreenMode();
-
+        config.currentHost = config.currentHost || [module.exports.formatAddress('127.0.0.1:3000')];
         if(!config.enabledScripts) {
             config.enabledScripts = {
                 'autoreload': true,
@@ -244,7 +256,7 @@ load(function(loadedConfig) {
         console.log('DeveloperMode: enabling console script');
 
         if(typeof io != "undefined") {
-            var socket = io(config.hosts);
+            var socket = io(config.currentHost);
             var previousConsole = window.console || {};
             window.console = {
                 log:function(){
