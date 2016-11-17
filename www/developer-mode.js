@@ -50,11 +50,11 @@ module.exports = {
         // window.location.href since content sync'd apps will have a phonegapappdev
         // in the path
         if(window.location.href.indexOf('phonegapdevapp') !== -1 ) {
+            this.setHomescreenMode(false);
+            return false;
+        } else {
             this.setHomescreenMode(true);
             return true;
-        } else {
-            this.setHomescreenMode(false)
-            return false;
         }
     }
 }
