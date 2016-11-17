@@ -46,7 +46,16 @@ module.exports = {
         config.homescreenMode = value;
     },
     getHomescreenMode: function() {
-        return config.homescreenMode;
+        // figure out if we are in the parent app or child app by examining
+        // window.location.href since content sync'd apps will have a phonegapappdev
+        // in the path
+        if(window.location.href.indexOf('phonegapdevapp') !== -1 ) {
+            this.setHomescreenMode(true);
+            return true;
+        } else {
+            this.setHomescreenMode(false)
+            return false;
+        }
     }
 }
 
@@ -59,7 +68,7 @@ function load(callback) {
         config = parseAsJSON(text);
 
         config.hosts = config.hosts || [module.exports.formatAddress('127.0.0.1:3000')];
-        config.homescreenMode = config.homescreenMode || true;
+        config.homescreenMode = module.exports.getHomescreenMode();
 
         if(!config.enabledScripts) {
             config.enabledScripts = {
