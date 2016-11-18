@@ -3,7 +3,7 @@ var exec = cordova.require('cordova/exec');
 
 var config = {
     hosts: [],
-    currentHost = '',
+    currentHost: '',
     homescreenMode: true,
     enabledScripts: {}
 };
@@ -33,11 +33,14 @@ module.exports = {
     },
     setCurrentHostAddress: function(address) {
         // add host address if it's not in there already
-        var hostList = hosts.join(',');
+        var hostList = config.hosts.join(',');
         if(hostList.indexOf(address) === -1) {
             addHostAddress(address);
         }
         config.currentHost = this.formatAddress(address);
+        save(config, function(){
+            console.log('Saved current host: ' + config.currentHost);
+        });
     },
     getCurrentHostAddress: function() {
         return config.currentHost;
@@ -81,7 +84,7 @@ function load(callback) {
 
         config.hosts = config.hosts || [module.exports.formatAddress('127.0.0.1:3000')];
         config.homescreenMode = module.exports.getHomescreenMode();
-        config.currentHost = config.currentHost || [module.exports.formatAddress('127.0.0.1:3000')];
+        config.currentHost = config.currentHost || module.exports.formatAddress('127.0.0.1:3000');
         if(!config.enabledScripts) {
             config.enabledScripts = {
                 'autoreload': true,
@@ -204,7 +207,7 @@ load(function(loadedConfig) {
 
         function postStatus() {
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', module.exports.getHostAddress() + '/__api__/autoreload', true);
+            xhr.open('POST', module.exports.getCurrentHostAddress() + '/__api__/autoreload', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onreadystatechange = function() {
                 if (this.readyState === 4 && /^[2]/.test(this.status)) {
@@ -215,7 +218,7 @@ load(function(loadedConfig) {
 
         function checkForReload() {
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', module.exports.getHostAddress() + '/__api__/autoreload', true);
+            xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/autoreload', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onreadystatechange = function() {
                 if (this.readyState === 4 && /^[2]/.test(this.status)) {
@@ -226,14 +229,14 @@ load(function(loadedConfig) {
                         // this is ensure we don't duplicate a download when we first launch the app on device
                         if(response.content.lastUpdated !== 0){
                             window.clearTimeout(timer);
-                            window.DeveloperMode.downloadZip({
-                                address: 'http://' + module.exports.getHostAddress(),
+                            window.DeveloperMode.deploy.downloadZip({
+                                address: 'http://' + module.exports.getCurrentHostAddress(),
                                 update: true
                             });
                         }
                     } else if (response.projectChanged) {
-                        window.DeveloperMode.downloadZip({
-                            address: 'http://' + module.exports.getHostAddress(),
+                        window.DeveloperMode.deploy.downloadZip({
+                            address: 'http://' + module.exports.getCurrentHostAddress(),
                             update: false
                         });
                     }
@@ -256,7 +259,7 @@ load(function(loadedConfig) {
         console.log('DeveloperMode: enabling console script');
 
         if(typeof io != "undefined") {
-            var socket = io(config.currentHost);
+            var socket = io(module.exports.getCurrentHostAddress());
             var previousConsole = window.console || {};
             window.console = {
                 log:function(){
