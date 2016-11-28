@@ -2,6 +2,7 @@
 var exec = cordova.require('cordova/exec');
 
 var config = {
+    currentAppID: '',
     hosts: [],
     currentHost: '',
     homescreenMode: true,
@@ -21,17 +22,28 @@ module.exports = {
 
         return path;
     },
-    addHostAddress: function(address) {
+    addHostAddress: function(address, callback) {
         if(!config.hosts) config.hosts = [];
         config.hosts.push(this.formatAddress(address));
         save(config, function(){
             console.log('Saved config.hosts: ' + config.hosts[config.hosts.length-1]);
+            callback();
         });
+    },
+    isHomescreenMode: function() {
+        // figure out if we are in the parent app or child app by examining
+        // window.location.href since content sync'd apps will have a phonegapappdev
+        // in the path
+        if(window.location.href.indexOf('phonegapdevapp') !== -1 ) {
+            return false;
+        } else {
+            return true;
+        }
     },
     getHostAddresses: function() {
         return config.hosts;
     },
-    setCurrentHostAddress: function(address) {
+    setCurrentHostAddress: function(address, callback) {
         // add host address if it's not in there already
         var hostList = config.hosts.join(',');
         if(hostList.indexOf(address) === -1) {
@@ -40,16 +52,18 @@ module.exports = {
         config.currentHost = this.formatAddress(address);
         save(config, function(){
             console.log('Saved current host: ' + config.currentHost);
+            callback();
         });
     },
     getCurrentHostAddress: function() {
         return config.currentHost;
     },
-    setEnabledScript: function(script, value) {
+    setEnabledScript: function(script, value, callback) {
         if(!config.enabledScripts) config.enabledScripts = {};
         config.enabledScripts[script] = value;
         save(config, function(){
             console.log('Saved config.enabledScript.'+ script + ' : ' + value);
+            callback();
         });
     },
     getEnabledScript: function(script) {
@@ -57,20 +71,15 @@ module.exports = {
             return config.enabledScripts[script];
         }
     },
-    setHomescreenMode: function(value) {
-        config.homescreenMode = value;
+    setCurrentAppID: function(id, callback) {
+        config.currentAppID = id;
+        save(config, function(){
+            console.log('Saved config.currentAppID: ' + id);
+            callback();
+        });
     },
-    getHomescreenMode: function() {
-        // figure out if we are in the parent app or child app by examining
-        // window.location.href since content sync'd apps will have a phonegapappdev
-        // in the path
-        if(window.location.href.indexOf('phonegapdevapp') !== -1 ) {
-            this.setHomescreenMode(false);
-            return false;
-        } else {
-            this.setHomescreenMode(true);
-            return true;
-        }
+    getCurrentAppID: function() {
+        return config.currentAppID;
     }
 }
 
@@ -83,8 +92,10 @@ function load(callback) {
         config = parseAsJSON(text);
 
         config.hosts = config.hosts || [module.exports.formatAddress('127.0.0.1:3000')];
-        config.homescreenMode = module.exports.getHomescreenMode();
+        config.homescreenMode = module.exports.isHomescreenMode();
         config.currentHost = config.currentHost || module.exports.formatAddress('127.0.0.1:3000');
+        config.currentAppID = config.currentAppID || '';
+
         if(!config.enabledScripts) {
             config.enabledScripts = {
                 'autoreload': true,
@@ -217,6 +228,7 @@ load(function(loadedConfig) {
         }
 
         function checkForReload() {
+            requestAppID();
             var xhr = new XMLHttpRequest();
             xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/autoreload', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -240,6 +252,23 @@ load(function(loadedConfig) {
                             update: false
                         });
                     }
+                }
+            };
+            xhr.send();
+        }
+
+        function requestAppID() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/getAppID', true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onreadystatechange = function() {
+                if (this.readyState === 4 && /^[2]/.test(this.status)) {
+                    var response = JSON.parse(this.responseText);
+                    if(response.appID) {
+                        module.exports.setCurrentAppID(response.appID);
+                    }
+                } else {
+                    console.log('Can hit server but with status: ', this.status);
                 }
             };
             xhr.send();
