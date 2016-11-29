@@ -37,6 +37,8 @@ module.exports = {
         if(window.location.href.indexOf('phonegapdevapp') !== -1 ) {
             return false;
         } else {
+            // clear out current appid
+            this.setCurrentAppID('', function() {});
             return true;
         }
     },
@@ -218,7 +220,7 @@ load(function(loadedConfig) {
 
         function postStatus() {
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', module.exports.getCurrentHostAddress() + '/__api__/autoreload', true);
+            xhr.open('POST', module.exports.getCurrentHostAddress() + '/__api__/autoreload?appID=' + module.exports.getCurrentAppID(), true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onreadystatechange = function() {
                 if (this.readyState === 4 && /^[2]/.test(this.status)) {
@@ -228,56 +230,58 @@ load(function(loadedConfig) {
         }
 
         function checkForReload() {
-            requestAppID();
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/autoreload', true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.onreadystatechange = function() {
-                if (this.readyState === 4 && /^[2]/.test(this.status)) {
-                    var response = JSON.parse(this.responseText);
-                    if (response.content.outdated) {
-                        postStatus();
-
-                        // this is ensure we don't duplicate a download when we first launch the app on device
-                        if(response.content.lastUpdated !== 0){
-                            window.clearTimeout(timer);
-                            window.DeveloperMode.deploy.downloadZip({
-                                address: 'http://' + module.exports.getCurrentHostAddress(),
-                                update: true
-                            });
-                        }
-                    } else if (response.projectChanged) {
-                        window.DeveloperMode.deploy.downloadZip({
-                            address: 'http://' + module.exports.getCurrentHostAddress(),
-                            update: false
-                        });
-                    }
-                }
-            };
-            xhr.send();
+            requestAppID(function() {
+                document.addEventListener("deviceready", function(){
+                    timer = setInterval(getReloadStatus, 1000 * 3);
+                }, false);
+            });
         }
 
-        function requestAppID() {
+        function getReloadStatus() {
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/getAppID', true);
+                xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/autoreload?appID=' + module.exports.getCurrentAppID(), true);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                xhr.onreadystatechange = function() {
+                    if (this.readyState === 4 && /^[2]/.test(this.status)) {
+                        var response = JSON.parse(this.responseText);
+                        if (response.content.outdated) {
+                            postStatus();
+
+                            // this is ensure we don't duplicate a download when we first launch the app on device
+                            if(response.content.lastUpdated !== 0){
+                                window.clearTimeout(timer);
+                                window.DeveloperMode.deploy.downloadZip({
+                                    address: module.exports.getCurrentHostAddress(),
+                                    update: true
+                                });
+                            }
+                        } else if (response.projectChanged) {
+                            window.DeveloperMode.deploy.downloadZip({
+                                address: module.exports.getCurrentHostAddress(),
+                                update: false
+                            });
+                        }
+                    }
+                };
+                xhr.send();
+        }
+
+        function requestAppID(callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/appid', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onreadystatechange = function() {
                 if (this.readyState === 4 && /^[2]/.test(this.status)) {
                     var response = JSON.parse(this.responseText);
                     if(response.appID) {
-                        module.exports.setCurrentAppID(response.appID);
+                        module.exports.setCurrentAppID(response.appID, callback);
                     }
-                } else {
-                    console.log('Can hit server but with status: ', this.status);
                 }
             };
             xhr.send();
         }
 
-        document.addEventListener("deviceready", function(){
-            timer = setInterval(checkForReload, 1000 * 3);
-        }, false);
-
+        checkForReload();
     }
 
     if(config.enabledScripts.console) {
