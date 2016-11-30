@@ -202,6 +202,21 @@ function parseAsJSON(text) {
     }
 }
 
+function requestAppID(callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/devmode', true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onreadystatechange = function() {
+        if (this.readyState === 4 && /^[2]/.test(this.status)) {
+            var response = JSON.parse(this.responseText);
+            if(response.appID) {
+                module.exports.setCurrentAppID(response.appID, callback);
+            }
+        }
+    };
+    xhr.send();
+}
+
 /*!
  * Begin enabling scripts based on config values
  */
@@ -230,14 +245,6 @@ load(function(loadedConfig) {
         }
 
         function checkForReload() {
-            requestAppID(function() {
-                document.addEventListener("deviceready", function(){
-                    timer = setInterval(getReloadStatus, 1000 * 3);
-                }, false);
-            });
-        }
-
-        function getReloadStatus() {
             var xhr = new XMLHttpRequest();
                 xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/autoreload?appID=' + module.exports.getCurrentAppID(), true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -266,22 +273,9 @@ load(function(loadedConfig) {
                 xhr.send();
         }
 
-        function requestAppID(callback) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/appid', true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.onreadystatechange = function() {
-                if (this.readyState === 4 && /^[2]/.test(this.status)) {
-                    var response = JSON.parse(this.responseText);
-                    if(response.appID) {
-                        module.exports.setCurrentAppID(response.appID, callback);
-                    }
-                }
-            };
-            xhr.send();
-        }
-
-        checkForReload();
+        document.addEventListener("deviceready", function(){
+            timer = setInterval(checkForReload, 1000 * 3);
+        }, false);
     }
 
     if(config.enabledScripts.console) {
@@ -344,47 +338,51 @@ load(function(loadedConfig) {
             var uri;
             var sync;
             var theHeaders = options.headers;
-            if(options.update === true) {
-                uri = encodeURI(options.address + '/__api__/update');
-                sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'merge', copyCordovaAssets: false, headers: theHeaders });
-                sync.on('complete', function(data) {
-                    window.location.reload();
+
+            requestAppID(function() {
+                if(options.update === true) {
+                    uri = encodeURI(options.address + '/__api__/update');
+                    sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'merge', copyCordovaAssets: false, headers: theHeaders });
+                    sync.on('complete', function(data) {
+                        window.location.reload();
+                    });
+                } else {
+                    uri = encodeURI(options.address + '/__api__/appzip');
+                    sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'replace', copyCordovaAssets: true, headers: theHeaders });
+                    sync.on('complete', function(data) {
+                        window.location.href = data.localPath + '/www/index.html';
+                    });
+                }
+
+                sync.on('progress', function(data) {
+                    if(options.onProgress) {
+                        options.onProgress(data);
+                    }
                 });
-            } else {
-                uri = encodeURI(options.address + '/__api__/appzip');
-                sync = ContentSync.sync({ src: uri, id: 'phonegapdevapp', type: 'replace', copyCordovaAssets: true, headers: theHeaders });
-                sync.on('complete', function(data) {
-                    window.location.href = data.localPath + '/www/index.html';
+
+                sync.on('error', function(e){
+                    if (options.onDownloadError) {
+                        setTimeout(function() {
+                            options.onDownloadError(e);
+                        }, 10);
+                    }
+                    console.log("download error " + e);
                 });
-            }
 
-            sync.on('progress', function(data) {
-                if(options.onProgress) {
-                    options.onProgress(data);
-                }
+                document.addEventListener('cancelSync', function(e) {
+                    sync.cancel();
+                });
+
+                sync.on('cancel', function(e) {
+                    if (options.onCancel) {
+                        setTimeout(function() {
+                            options.onCancel(e);
+                        }, 10);
+                    }
+                    console.log("download cancelled by user");
+                });
             });
 
-            sync.on('error', function(e){
-                if (options.onDownloadError) {
-                    setTimeout(function() {
-                        options.onDownloadError(e);
-                    }, 10);
-                }
-                console.log("download error " + e);
-            });
-
-            document.addEventListener('cancelSync', function(e) {
-                sync.cancel();
-            });
-
-            sync.on('cancel', function(e) {
-                if (options.onCancel) {
-                    setTimeout(function() {
-                        options.onCancel(e);
-                    }, 10);
-                }
-                console.log("download cancelled by user");
-            });
         };
     }
 
