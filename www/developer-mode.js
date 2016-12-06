@@ -24,11 +24,31 @@ module.exports = {
     },
     addHostAddress: function(address, callback) {
         if(!config.hosts) config.hosts = [];
-        config.hosts.push(this.formatAddress(address));
-        save(config, function(){
-            console.log('Saved config.hosts: ' + config.hosts[config.hosts.length-1]);
+
+        var uniqueHost = false;
+
+        // make sure we add only unique addresses
+        var hostList = config.hosts.join(',');
+        var theAddress = this.formatAddress(address);
+        if(hostList.indexOf(theAddress) === -1) {
+            uniqueHost = true;
+        }
+
+        if(uniqueHost) {
+            config.hosts.push(this.formatAddress(address));
+
+            // make sure to cap list of host address to 5
+            if(config.hosts.length > 5) {
+                config.hosts.shift()
+            }
+
+            save(config, function(){
+                console.log('Saved config.hosts: ' + address);
+                callback();
+            });
+        } else {
             callback();
-        });
+        }
     },
     isHomescreenMode: function() {
         // figure out if we are in the parent app or child app by examining
@@ -46,11 +66,6 @@ module.exports = {
         return config.hosts;
     },
     setCurrentHostAddress: function(address, callback) {
-        // add host address if it's not in there already
-        var hostList = config.hosts.join(',');
-        if(hostList.indexOf(address) === -1) {
-            addHostAddress(address);
-        }
         config.currentHost = this.formatAddress(address);
         save(config, function(){
             console.log('Saved current host: ' + config.currentHost);
@@ -235,7 +250,7 @@ load(function(loadedConfig) {
 
         function postStatus() {
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', module.exports.getCurrentHostAddress() + '/__api__/autoreload?appID=' + module.exports.getCurrentAppID(), true);
+            xhr.open('POST', config.currentHost + '/__api__/autoreload?appID=' + module.exports.getCurrentAppID(), true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onreadystatechange = function() {
                 if (this.readyState === 4 && /^[2]/.test(this.status)) {
@@ -246,7 +261,7 @@ load(function(loadedConfig) {
 
         function checkForReload() {
             var xhr = new XMLHttpRequest();
-                xhr.open('GET', module.exports.getCurrentHostAddress() + '/__api__/autoreload?appID=' + module.exports.getCurrentAppID(), true);
+                xhr.open('GET', config.currentHost + '/__api__/autoreload?appID=' + module.exports.getCurrentAppID(), true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.onreadystatechange = function() {
                     if (this.readyState === 4 && /^[2]/.test(this.status)) {
@@ -258,13 +273,13 @@ load(function(loadedConfig) {
                             if(response.content.lastUpdated !== 0){
                                 window.clearTimeout(timer);
                                 window.DeveloperMode.deploy.downloadZip({
-                                    address: module.exports.getCurrentHostAddress(),
+                                    address: config.currentHost,
                                     update: true
                                 });
                             }
                         } else if (response.projectChanged) {
                             window.DeveloperMode.deploy.downloadZip({
-                                address: module.exports.getCurrentHostAddress(),
+                                address: config.currentHost,
                                 update: false
                             });
                         }
@@ -286,7 +301,7 @@ load(function(loadedConfig) {
         console.log('DeveloperMode: enabling console script');
 
         if(typeof io != "undefined") {
-            var socket = io(module.exports.getCurrentHostAddress());
+            var socket = io(config.currentHost);
             var previousConsole = window.console || {};
             window.console = {
                 log:function(){
