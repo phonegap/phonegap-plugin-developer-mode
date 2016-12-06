@@ -10,8 +10,32 @@ var config = {
 };
 
 module.exports = {
+    _handlers : {
+        // event handlers for an app to subscribe to
+        'load': [],
+        'save': [],
+    },
     deploy: {
         // reserved for namespacing
+    },
+    emit: function() {
+        var args = Array.prototype.slice.call(arguments);
+        var eventName = args.shift();
+
+        if (!this._handlers.hasOwnProperty(eventName)) {
+            return false;
+        }
+
+        for (var i = 0, length = this._handlers[eventName].length; i < length; i++) {
+            this._handlers[eventName][i].apply(undefined,args);
+        }
+
+        return true;
+    },
+    on: function(eventName, callback) {
+        if (this._handlers.hasOwnProperty(eventName)) {
+            this._handlers[eventName].push(callback);
+        }
     },
     formatAddress: function(path) {
         // default to http:// when no protocol exists
@@ -126,12 +150,14 @@ function load(callback) {
             config.enableScripts = config.enableScripts;
         }
 
+        module.exports.emit('load');
         callback(config);
     });
 };
 
 function save(data, callback) {
     saveFile('config.json', data, function(e) {
+        module.exports.emit('save');
         callback();
     });
 };
